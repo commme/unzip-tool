@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self' blob: https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
+<title>ZIP 압축 해제기</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0d;
+    --surface: #131a17;
+    --surface-2: #1c2521;
+    --border: #2a3530;
+    --text: #f0fdfa;
+    --text-2: #a7f3d0;
+    --text-3: #6ee7b7;
+    --muted: #64748b;
+    --accent: #2dd4bf;
+    --accent-2: #06b6d4;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Pretendard', -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    background:
+      radial-gradient(ellipse 800px 500px at 20% 10%, rgba(45,212,191,0.15), transparent),
+      radial-gradient(ellipse 600px 400px at 80% 90%, rgba(6,182,212,0.12), transparent),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 48px 20px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-size: 20px;
+    box-shadow: 0 8px 24px rgba(45,212,191,0.3);
+  }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .subtitle {
+    color: var(--text-2);
+    font-size: 14px;
+    margin-bottom: 28px;
+    margin-left: 58px;
+    opacity: 0.8;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 56px 20px;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    background: var(--surface-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(45,212,191,0.05), rgba(6,182,212,0.05));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .drop-zone:hover { border-color: var(--accent); }
+  .drop-zone:hover::before { opacity: 1; }
+  .drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(45,212,191,0.1);
+    transform: scale(1.005);
+  }
+  .drop-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+    display: block;
+    position: relative;
+  }
+  .drop-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .drop-hint {
+    font-size: 13px;
+    color: var(--muted);
+    position: relative;
+  }
+  input[type="file"] { display: none; }
+
+  .banner {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.2);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #fde68a;
+  }
+  .banner.error {
+    background: rgba(248,113,113,0.1);
+    border-color: rgba(248,113,113,0.3);
+    color: #fecaca;
+  }
+  .banner.info {
+    background: rgba(45,212,191,0.08);
+    border-color: rgba(45,212,191,0.2);
+    color: var(--text-2);
+  }
+  .banner code {
+    background: rgba(0,0,0,0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+  }
+
+  .progress {
+    margin-top: 16px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    width: 0;
+    transition: width 0.3s;
+  }
+
+  /* Archive view */
+  .archive {
+    display: none;
+  }
+  .archive.active { display: block; }
+
+  .archive-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .archive-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .archive-title .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .archive-meta {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+  }
+  .archive-meta span::before { content: '·'; margin-right: 10px; color: var(--border); }
+  .archive-meta span:first-child::before { content: ''; margin: 0; }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toolbar .search {
+    flex: 1;
+    min-width: 200px;
+    padding: 9px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+  }
+  .toolbar .search:focus { border-color: var(--accent); }
+  .toolbar .count {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 0 6px;
+  }
+
+  .file-list {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    max-height: 460px;
+    overflow-y: auto;
+  }
+  .file-row {
+    display: grid;
+    grid-template-columns: 28px 24px 1fr auto auto;
+    gap: 10px;
+    padding: 9px 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    transition: background 0.1s;
+  }
+  .file-row:last-child { border-bottom: 0; }
+  .file-row:hover { background: rgba(45,212,191,0.06); }
+  .file-row .icon { font-size: 16px; text-align: center; }
+  .file-row .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+  .file-row .name .path {
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .file-row .size {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .file-row .action-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .file-row .action-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(45,212,191,0.08);
+  }
+  .file-row.hidden { display: none; }
+
+  input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 11px 18px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0a0f0d;
+    box-shadow: 0 4px 12px rgba(45,212,191,0.3);
+    flex: 1;
+    min-width: 180px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(45,212,191,0.4);
+  }
+  .btn-primary:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-secondary {
+    background: var(--surface-2);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  /* Preview modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    z-index: 100;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-width: 920px;
+    width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .modal-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { background: var(--surface-2); }
+  .modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    min-height: 200px;
+  }
+  .modal-body pre {
+    font-family: 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+    color: var(--text-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.6;
+  }
+  .modal-body img {
+    max-width: 100%;
+    max-height: 70vh;
+    display: block;
+    margin: 0 auto;
+    border-radius: 6px;
+  }
+  .modal-body .unsupported {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 20px;
+  }
+  .modal-body .unsupported .emoji { font-size: 42px; margin-bottom: 12px; display: block; }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer strong { color: var(--text-2); }
+
+  @media (max-width: 560px) {
+    body { padding: 24px 12px; }
+    h1 { font-size: 20px; }
+    .subtitle { margin-left: 0; margin-top: 8px; }
+    .file-row {
+      grid-template-columns: 24px 20px 1fr auto;
+      font-size: 12px;
+    }
+    .file-row .size { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">📦</div>
+    <h1>ZIP 압축 해제기</h1>
+  </div>
+  <p class="subtitle">ZIP 파일을 끌어다 놓으면 바로 풀립니다 · 파일은 서버로 전송되지 않습니다</p>
+
+  <div class="banner info">
+    <span>🔐</span>
+    <span>모든 처리는 <strong>브라우저 로컬</strong>에서만 이루어집니다. 한글 파일명(CP949/EUC-KR) 자동 복원, 선택 해제, 미리보기 지원.</span>
+  </div>
+
+  <div id="errorBanner" class="banner error" style="display:none;">
+    <span>⚠️</span>
+    <span id="errorMessage"></span>
+  </div>
+
+  <div class="card" id="dropCard">
+    <div id="dropZone" class="drop-zone">
+      <span class="drop-icon">📁</span>
+      <div class="drop-text">ZIP 파일을 끌어다 놓거나 클릭하세요</div>
+      <div class="drop-hint">.zip · 여러 파일 동시 업로드 가능 · 최대 권장 2GB</div>
+      <input type="file" id="fileInput" accept=".zip,application/zip,application/x-zip-compressed" multiple>
+    </div>
+    <div class="progress" id="progress"><div class="progress-bar" id="progressBar"></div></div>
+  </div>
+
+  <div id="archives"></div>
+
+  <div class="footer">
+    Built with <a href="https://github.com/101arrowz/fflate" target="_blank" rel="noopener">fflate</a> · 100% 클라이언트 처리<br>
+    <span style="margin-top:6px;display:inline-block;">© 2026 <strong>COMMME</strong> · Built with Claude Code</span>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" id="modalClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"
+        integrity="sha384-DT0Ls0mO7JmjTnT+oBuMhEJzYJO1zUqzuuMXNdnOmOQRIpN2BgSjvBV/j50NngIT"
+        crossorigin="anonymous"></script>
+<script>
+(function() {
+  'use strict';
+
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const archives = document.getElementById('archives');
+  const progress = document.getElementById('progress');
+  const progressBar = document.getElementById('progressBar');
+  const errorBanner = document.getElementById('errorBanner');
+  const errorMessage = document.getElementById('errorMessage');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody = document.getElementById('modalBody');
+  const modalClose = document.getElementById('modalClose');
+
+  let archiveIdCounter = 0;
+  const archiveStore = new Map();
+
+  /* ---------- Helpers ---------- */
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  function fixKoreanFilename(name) {
+    // fflate decodes non-UTF-8 ZIP filenames as Latin-1.
+    // Korean ZIPs often use CP949/EUC-KR. Detect and re-decode.
+    if (!/[\u0080-\u00ff]/.test(name)) return name;
+    try {
+      const bytes = new Uint8Array(name.length);
+      for (let i = 0; i < name.length; i++) bytes[i] = name.charCodeAt(i) & 0xff;
+      const decoded = new TextDecoder('euc-kr', { fatal: false }).decode(bytes);
+      // If decoded result contains replacement chars, the original was probably UTF-8 already
+      if (decoded.includes('\ufffd')) return name;
+      // Heuristic: decoded version should contain Hangul or CJK
+      if (/[\uac00-\ud7af\u3130-\u318f\u4e00-\u9fff]/.test(decoded)) return decoded;
+      return name;
+    } catch (e) {
+      return name;
+    }
+  }
+
+  function iconFor(name, isDir) {
+    if (isDir) return '📁';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (['jpg','jpeg','png','gif','webp','svg','bmp','ico'].includes(ext)) return '🖼️';
+    if (['mp4','webm','mov','avi','mkv'].includes(ext)) return '🎬';
+    if (['mp3','wav','ogg','flac','m4a'].includes(ext)) return '🎵';
+    if (['pdf'].includes(ext)) return '📕';
+    if (['doc','docx'].includes(ext)) return '📘';
+    if (['xls','xlsx','csv'].includes(ext)) return '📊';
+    if (['ppt','pptx'].includes(ext)) return '📙';
+    if (['zip','rar','7z','tar','gz'].includes(ext)) return '🗜️';
+    if (['txt','md','log','rtf'].includes(ext)) return '📝';
+    if (['js','ts','jsx','tsx','py','java','c','cpp','cs','go','rs','rb','php','html','css','json','xml','yml','yaml'].includes(ext)) return '📄';
+    return '📄';
+  }
+
+  function isPreviewableText(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    return ['txt','md','log','json','xml','yml','yaml','csv','html','css','js','ts','jsx','tsx','py','java','c','cpp','cs','go','rs','rb','php','sh','bat','ini','conf','toml','svg','rtf'].includes(ext);
+  }
+
+  function isPreviewableImage(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    return ['jpg','jpeg','png','gif','webp','bmp','ico'].includes(ext);
+  }
+
+  function showError(msg) {
+    errorMessage.textContent = msg;
+    errorBanner.style.display = 'flex';
+    setTimeout(() => { errorBanner.style.display = 'none'; }, 6000);
+  }
+
+  function sanitizeFilename(name) {
+    // Remove chars invalid on Windows/macOS, replace control chars with _
+    return name.replace(/[\x00-\x1f\x7f<>:"/\\|?*]/g, '_').replace(/^_+|_+$/g, '').slice(0, 240) || 'unnamed';
+  }
+
+  function saveBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = sanitizeFilename(filename);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /* ---------- ZIP parsing (lazy: reads Central Directory only, decompresses on demand) ---------- */
+
+  function decodeZipName(bytes, flags) {
+    const isUtf8 = (flags & 0x800) !== 0;
+    if (isUtf8) {
+      try {
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch (e) {
+        // Flag lies — fall back to CP949 (common for Korean Windows ZIPs)
+        return new TextDecoder('euc-kr', { fatal: false }).decode(bytes);
+      }
+    }
+    // No UTF-8 flag: spec says CP437, but Korean ZIPs often use CP949
+    const cp949 = new TextDecoder('euc-kr', { fatal: false }).decode(bytes);
+    if (/[\uac00-\ud7af\u3130-\u318f]/.test(cp949)) return cp949;
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (e) {
+      return cp949;
+    }
+  }
+
+  function parseZipCentralDirectory(data) {
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+
+    // Find End of Central Directory (EOCD)
+    let eocdOff = -1;
+    const scanLimit = Math.min(data.length, 65558);
+    for (let i = data.length - 22; i >= data.length - scanLimit && i >= 0; i--) {
+      if (view.getUint32(i, true) === 0x06054b50) { eocdOff = i; break; }
+    }
+    if (eocdOff < 0) throw new Error('EOCD를 찾을 수 없습니다 (ZIP이 손상되었거나 올바른 형식이 아닙니다)');
+
+    let cdSize = view.getUint32(eocdOff + 12, true);
+    let cdOffset = view.getUint32(eocdOff + 16, true);
+    let totalEntries = view.getUint16(eocdOff + 10, true);
+
+    // Zip64 support (for archives > 4GB or > 65k entries)
+    if (cdOffset === 0xFFFFFFFF || totalEntries === 0xFFFF || cdSize === 0xFFFFFFFF) {
+      const locOff = eocdOff - 20;
+      if (locOff >= 0 && view.getUint32(locOff, true) === 0x07064b50) {
+        const z64Off = Number(view.getBigUint64(locOff + 8, true));
+        if (view.getUint32(z64Off, true) === 0x06064b50) {
+          totalEntries = Number(view.getBigUint64(z64Off + 32, true));
+          cdSize = Number(view.getBigUint64(z64Off + 40, true));
+          cdOffset = Number(view.getBigUint64(z64Off + 48, true));
+        }
+      }
+    }
+
+    const entries = [];
+    let off = cdOffset;
+    for (let i = 0; i < totalEntries; i++) {
+      if (off + 46 > data.length || view.getUint32(off, true) !== 0x02014b50) break;
+      const flags = view.getUint16(off + 8, true);
+      const method = view.getUint16(off + 10, true);
+      let compSize = view.getUint32(off + 20, true);
+      let uncompSize = view.getUint32(off + 24, true);
+      const fnLen = view.getUint16(off + 28, true);
+      const extraLen = view.getUint16(off + 30, true);
+      const commentLen = view.getUint16(off + 32, true);
+      let localOff = view.getUint32(off + 42, true);
+      const nameBytes = data.subarray(off + 46, off + 46 + fnLen);
+
+      // Parse Zip64 extra field if any size field is 0xFFFFFFFF
+      if (compSize === 0xFFFFFFFF || uncompSize === 0xFFFFFFFF || localOff === 0xFFFFFFFF) {
+        const extraStart = off + 46 + fnLen;
+        let e = 0;
+        while (e + 4 <= extraLen) {
+          const tag = view.getUint16(extraStart + e, true);
+          const size = view.getUint16(extraStart + e + 2, true);
+          if (tag === 0x0001) {
+            let p = extraStart + e + 4;
+            if (uncompSize === 0xFFFFFFFF) { uncompSize = Number(view.getBigUint64(p, true)); p += 8; }
+            if (compSize === 0xFFFFFFFF) { compSize = Number(view.getBigUint64(p, true)); p += 8; }
+            if (localOff === 0xFFFFFFFF) { localOff = Number(view.getBigUint64(p, true)); p += 8; }
+            break;
+          }
+          e += 4 + size;
+        }
+      }
+
+      const name = decodeZipName(nameBytes, flags);
+      entries.push({
+        name,
+        flags,
+        method,
+        compSize,
+        size: uncompSize,
+        localOff,
+        isDir: name.endsWith('/') || uncompSize === 0 && name.endsWith('/'),
+        encrypted: (flags & 0x1) !== 0
+      });
+
+      off += 46 + fnLen + extraLen + commentLen;
+    }
+
+    return entries;
+  }
+
+  async function extractEntry(entry, buffer) {
+    if (entry.encrypted) {
+      throw new Error('암호화된 항목은 지원하지 않습니다');
+    }
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const lh = entry.localOff;
+    if (lh + 30 > buffer.length || view.getUint32(lh, true) !== 0x04034b50) {
+      throw new Error('로컬 헤더가 손상되었습니다');
+    }
+    const lhFnLen = view.getUint16(lh + 26, true);
+    const lhExLen = view.getUint16(lh + 28, true);
+    const dataStart = lh + 30 + lhFnLen + lhExLen;
+    const compData = buffer.subarray(dataStart, dataStart + entry.compSize);
+
+    if (entry.method === 0) return compData;
+    if (entry.method === 8) {
+      return await new Promise((resolve, reject) => {
+        fflate.inflate(compData, (err, r) => err ? reject(err) : resolve(r));
+      });
+    }
+    throw new Error(`미지원 압축 방식 (method=${entry.method})`);
+  }
+
+  async function readFile(file) {
+    errorBanner.style.display = 'none';
+
+    if (typeof fflate === 'undefined' || typeof fflate.unzip !== 'function') {
+      showError('압축 해제 라이브러리(fflate)가 로드되지 않았습니다. 인터넷 연결 또는 CDN 차단을 확인하세요.');
+      return;
+    }
+
+    progress.style.display = 'block';
+    progressBar.style.width = '20%';
+
+    try {
+      const buf = await file.arrayBuffer();
+      progressBar.style.width = '70%';
+
+      const data = new Uint8Array(buf);
+      if (data.length < 4 || data[0] !== 0x50 || data[1] !== 0x4b) {
+        throw new Error('올바른 ZIP 파일이 아닙니다');
+      }
+
+      const entries = parseZipCentralDirectory(data);
+      progressBar.style.width = '100%';
+
+      if (entries.length === 0) {
+        throw new Error('빈 ZIP 파일이거나 읽을 수 있는 항목이 없습니다');
+      }
+
+      const hasEncrypted = entries.some(e => e.encrypted);
+      if (hasEncrypted && entries.every(e => e.encrypted)) {
+        throw new Error('비밀번호로 보호된 ZIP은 지원하지 않습니다');
+      }
+
+      renderArchive(file.name, entries, data, hasEncrypted);
+    } catch (err) {
+      showError('ZIP 읽기 실패: ' + (err.message || err));
+    } finally {
+      setTimeout(() => {
+        progress.style.display = 'none';
+        progressBar.style.width = '0';
+      }, 400);
+    }
+  }
+
+  /* ---------- Rendering ---------- */
+
+  function renderArchive(archiveName, files, buffer, hasEncrypted) {
+    const id = 'ar' + (++archiveIdCounter);
+    const totalSize = files.reduce((s, f) => s + f.size, 0);
+    const fileCount = files.filter(f => !f.isDir).length;
+
+    archiveStore.set(id, { archiveName, files, buffer });
+
+    const section = document.createElement('div');
+    section.className = 'card archive active';
+    section.dataset.id = id;
+
+    const fixedArchiveName = fixKoreanFilename(archiveName);
+
+    section.innerHTML = `
+      <div class="archive-header">
+        <div class="archive-title">
+          <span>🗜️</span>
+          <span class="name"></span>
+        </div>
+        <button class="btn btn-secondary" data-action="close" title="닫기">✕ 닫기</button>
+      </div>
+      <div class="archive-meta">
+        <span>${fileCount.toLocaleString()}개 파일</span>
+        <span>${formatSize(totalSize)}</span>
+      </div>
+      <div class="toolbar" style="margin-top:14px;">
+        <input type="checkbox" id="${id}-all" checked title="전체 선택/해제">
+        <label for="${id}-all" style="font-size:12px;color:var(--text-2);cursor:pointer;">전체</label>
+        <input type="text" class="search" placeholder="파일명 검색…" data-action="search">
+        <span class="count" data-role="count"></span>
+      </div>
+      <div class="file-list" data-role="list"></div>
+      <div class="actions">
+        <button class="btn btn-primary" data-action="extract-all">⬇️ 선택 파일 일괄 다운로드 (ZIP)</button>
+        <button class="btn btn-secondary" data-action="extract-individual">개별 다운로드</button>
+      </div>
+    `;
+
+    section.querySelector('.archive-title .name').textContent = fixedArchiveName;
+
+    const list = section.querySelector('[data-role="list"]');
+    const frag = document.createDocumentFragment();
+
+    files.sort((a, b) => {
+      if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+      return a.name.localeCompare(b.name, 'ko');
+    });
+
+    files.forEach((f, idx) => {
+      if (f.isDir) return; // skip directory entries in list display
+
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.dataset.idx = idx;
+
+      const parts = f.name.split('/');
+      const baseName = parts.pop();
+      const path = parts.length ? parts.join('/') + '/' : '';
+
+      row.innerHTML = `
+        <input type="checkbox" class="row-check" data-idx="${idx}" checked>
+        <span class="icon">${iconFor(f.name, false)}</span>
+        <span class="name" title="${escapeHtml(f.name)}">
+          ${path ? `<span class="path">${escapeHtml(path)}</span>` : ''}${escapeHtml(baseName)}
+        </span>
+        <span class="size">${formatSize(f.size)}</span>
+        <div style="display:flex;gap:4px;">
+          ${(isPreviewableText(f.name) || isPreviewableImage(f.name))
+            ? `<button class="action-btn" data-action="preview" data-idx="${idx}">미리보기</button>`
+            : ''}
+          <button class="action-btn" data-action="download" data-idx="${idx}">저장</button>
+        </div>
+      `;
+      frag.appendChild(row);
+    });
+
+    list.appendChild(frag);
+    updateCount(section);
+
+    archives.insertBefore(section, archives.firstChild);
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function updateCount(section) {
+    const checked = section.querySelectorAll('.row-check:checked:not(.row-hidden-ignored)').length;
+    const visible = [...section.querySelectorAll('.file-row')].filter(r => !r.classList.contains('hidden')).length;
+    const countEl = section.querySelector('[data-role="count"]');
+    if (countEl) countEl.textContent = `${checked} / ${visible} 선택`;
+    const btn = section.querySelector('[data-action="extract-all"]');
+    if (btn) btn.disabled = checked === 0;
+    const btn2 = section.querySelector('[data-action="extract-individual"]');
+    if (btn2) btn2.disabled = checked === 0;
+  }
+
+  /* ---------- Archive actions ---------- */
+
+  archives.addEventListener('click', async (e) => {
+    const actionBtn = e.target.closest('[data-action]');
+    if (!actionBtn) return;
+    const section = e.target.closest('.archive');
+    if (!section) return;
+    const id = section.dataset.id;
+    const store = archiveStore.get(id);
+    if (!store) return;
+    const action = actionBtn.dataset.action;
+
+    if (action === 'close') {
+      archiveStore.delete(id);
+      section.remove();
+      return;
+    }
+
+    if (action === 'preview') {
+      const idx = parseInt(actionBtn.dataset.idx, 10);
+      const file = store.files[idx];
+      openPreview(file, store.buffer);
+      return;
+    }
+
+    if (action === 'download') {
+      const idx = parseInt(actionBtn.dataset.idx, 10);
+      const file = store.files[idx];
+      actionBtn.disabled = true;
+      const orig = actionBtn.textContent;
+      actionBtn.textContent = '…';
+      try {
+        const content = await extractEntry(file, store.buffer);
+        const blob = new Blob([content]);
+        const baseName = file.name.split('/').pop() || file.name;
+        saveBlob(blob, baseName);
+      } catch (err) {
+        showError('다운로드 실패: ' + err.message);
+      } finally {
+        actionBtn.disabled = false;
+        actionBtn.textContent = orig;
+      }
+      return;
+    }
+
+    if (action === 'extract-individual') {
+      const checked = [...section.querySelectorAll('.row-check:checked')];
+      if (checked.length === 0) return;
+      if (checked.length > 30) {
+        if (!confirm(`${checked.length}개 파일을 각각 다운로드합니다. 계속할까요?`)) return;
+      }
+      actionBtn.disabled = true;
+      const orig = actionBtn.textContent;
+      let done = 0, failed = 0;
+      for (const cb of checked) {
+        const idx = parseInt(cb.dataset.idx, 10);
+        const file = store.files[idx];
+        actionBtn.textContent = `풀기 ${done + 1}/${checked.length}…`;
+        try {
+          const content = await extractEntry(file, store.buffer);
+          const blob = new Blob([content]);
+          const baseName = file.name.split('/').pop() || file.name;
+          saveBlob(blob, baseName);
+          done++;
+        } catch (err) {
+          failed++;
+          console.error('Extract failed:', file.name, err);
+        }
+        await new Promise(r => setTimeout(r, 80));
+      }
+      if (failed > 0) showError(`${failed}개 파일 해제 실패 (콘솔 참조)`);
+      actionBtn.disabled = false;
+      actionBtn.textContent = orig;
+      return;
+    }
+
+    if (action === 'extract-all') {
+      const checked = [...section.querySelectorAll('.row-check:checked')];
+      if (checked.length === 0) return;
+
+      actionBtn.disabled = true;
+      const originalText = actionBtn.textContent;
+
+      try {
+        const toZip = {};
+        let i = 0;
+        for (const cb of checked) {
+          const idx = parseInt(cb.dataset.idx, 10);
+          const file = store.files[idx];
+          i++;
+          actionBtn.textContent = `해제 ${i}/${checked.length}…`;
+          const content = await extractEntry(file, store.buffer);
+          toZip[file.name] = content;
+        }
+
+        actionBtn.textContent = '재압축 중…';
+        const zipped = await new Promise((resolve, reject) => {
+          fflate.zip(toZip, { level: 6 }, (err, data) => {
+            if (err) return reject(err);
+            resolve(data);
+          });
+        });
+
+        const blob = new Blob([zipped], { type: 'application/zip' });
+        const outName = store.archiveName.replace(/\.zip$/i, '') + '_selected.zip';
+        saveBlob(blob, outName);
+      } catch (err) {
+        showError('다운로드 실패: ' + err.message);
+      } finally {
+        actionBtn.disabled = false;
+        actionBtn.textContent = originalText;
+      }
+      return;
+    }
+  });
+
+  archives.addEventListener('change', (e) => {
+    const section = e.target.closest('.archive');
+    if (!section) return;
+
+    if (e.target.matches('[id$="-all"]')) {
+      const checked = e.target.checked;
+      section.querySelectorAll('.row-check').forEach(cb => {
+        if (!cb.closest('.file-row').classList.contains('hidden')) cb.checked = checked;
+      });
+      updateCount(section);
+      return;
+    }
+
+    if (e.target.classList.contains('row-check')) {
+      updateCount(section);
+    }
+  });
+
+  archives.addEventListener('input', (e) => {
+    if (!e.target.matches('[data-action="search"]')) return;
+    const section = e.target.closest('.archive');
+    const q = e.target.value.trim().toLowerCase();
+    section.querySelectorAll('.file-row').forEach(row => {
+      const name = row.querySelector('.name').textContent.toLowerCase();
+      row.classList.toggle('hidden', q.length > 0 && !name.includes(q));
+    });
+    updateCount(section);
+  });
+
+  /* ---------- Preview ---------- */
+
+  async function openPreview(file, buffer) {
+    modalTitle.textContent = file.name;
+    modalBody.innerHTML = '<div class="unsupported"><span class="emoji">⏳</span>압축 해제 중…</div>';
+    modalBackdrop.classList.add('active');
+
+    let content;
+    try {
+      content = await extractEntry(file, buffer);
+    } catch (err) {
+      modalBody.innerHTML = `<div class="unsupported"><span class="emoji">⚠️</span>미리보기 실패: ${escapeHtml(err.message)}</div>`;
+      return;
+    }
+
+    modalBody.innerHTML = '';
+
+    if (isPreviewableImage(file.name)) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const mime = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const img = document.createElement('img');
+      img.src = url;
+      img.onload = () => URL.revokeObjectURL(url);
+      modalBody.appendChild(img);
+    } else if (isPreviewableText(file.name)) {
+      const MAX = 256 * 1024;
+      const slice = content.length > MAX ? content.subarray(0, MAX) : content;
+      let text;
+      try {
+        text = new TextDecoder('utf-8', { fatal: true }).decode(slice);
+      } catch (e) {
+        text = new TextDecoder('euc-kr', { fatal: false }).decode(slice);
+      }
+      const pre = document.createElement('pre');
+      pre.textContent = text + (content.length > MAX ? '\n\n[... 표시 한도 초과, 256KB까지만 표시됨]' : '');
+      modalBody.appendChild(pre);
+    } else {
+      modalBody.innerHTML = '<div class="unsupported"><span class="emoji">📎</span>이 형식은 미리보기를 지원하지 않습니다.<br>저장 버튼으로 다운로드해 주세요.</div>';
+    }
+  }
+
+  modalClose.addEventListener('click', () => modalBackdrop.classList.remove('active'));
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) modalBackdrop.classList.remove('active');
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
+      modalBackdrop.classList.remove('active');
+    }
+  });
+
+  /* ---------- Drop zone ---------- */
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', async (e) => {
+    const files = [...e.target.files];
+    for (const f of files) await readFile(f);
+    fileInput.value = '';
+  });
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dropZone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (ev === 'dragleave' && dropZone.contains(e.relatedTarget)) return;
+      dropZone.classList.remove('dragover');
+    });
+  });
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    const files = [...(e.dataTransfer?.files || [])].filter(f => /\.zip$/i.test(f.name));
+    if (files.length === 0) {
+      showError('ZIP 파일만 지원합니다');
+      return;
+    }
+    for (const f of files) await readFile(f);
+  });
+
+  // Prevent default drag behavior on window
+  ['dragover', 'drop'].forEach(ev => {
+    window.addEventListener(ev, (e) => e.preventDefault());
+  });
+})();
+</script>
+</body>
+</html>
