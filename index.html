@@ -8,34 +8,30 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0f0d;
-    --surface: #131a17;
-    --surface-2: #1c2521;
-    --border: #2a3530;
-    --text: #f0fdfa;
-    --text-2: #a7f3d0;
-    --text-3: #6ee7b7;
-    --muted: #64748b;
-    --accent: #2dd4bf;
-    --accent-2: #06b6d4;
-    --success: #4ade80;
-    --warning: #fbbf24;
-    --danger: #f87171;
-    --radius: 14px;
-    --radius-sm: 8px;
+    --bg: #fafaf7;
+    --ink: #0a0a0a;
+    --ink-2: #666666;
+    --ink-3: #999999;
+    --accent: #ddff00;
+    --surface: #ffffff;
+    --surface-2: #f0f0eb;
+    --danger: #ff3333;
+    --success: #00cc44;
+    --warning: #ffaa00;
+    --bw: 3px;
+    --bw-thin: 2px;
+    --shadow: 8px 8px 0 #0a0a0a;
+    --shadow-sm: 4px 4px 0 #0a0a0a;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
     font-family: 'Pretendard', -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
-    background:
-      radial-gradient(ellipse 800px 500px at 20% 10%, rgba(45,212,191,0.15), transparent),
-      radial-gradient(ellipse 600px 400px at 80% 90%, rgba(6,182,212,0.12), transparent),
-      var(--bg);
-    color: var(--text);
+    background: var(--bg);
+    color: var(--ink);
     min-height: 100vh;
     padding: 48px 20px;
     line-height: 1.5;
@@ -45,53 +41,58 @@
 
   .header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
   .logo {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    width: 48px; height: 48px; border-radius: 0;
+    background: var(--accent);
+    border: var(--bw) solid var(--ink);
+    box-shadow: var(--shadow-sm);
     display: grid; place-items: center;
-    font-size: 20px;
-    box-shadow: 0 8px 24px rgba(45,212,191,0.3);
+    font-size: 22px;
   }
-  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
   .subtitle {
-    color: var(--text-2);
-    font-size: 14px;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    color: var(--ink-2);
+    font-size: 12px;
     margin-bottom: 28px;
-    margin-left: 58px;
-    opacity: 0.8;
+    margin-left: 62px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
   }
 
   .card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: var(--bw) solid var(--ink);
+    border-radius: 0;
+    box-shadow: var(--shadow);
     padding: 24px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: var(--radius);
+    border: var(--bw) dashed var(--ink);
+    border-radius: 0;
     padding: 56px 20px;
     text-align: center;
-    transition: all 0.2s ease;
+    transition: all 0.12s ease;
     cursor: pointer;
     background: var(--surface-2);
     position: relative;
     overflow: hidden;
   }
-  .drop-zone::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(45,212,191,0.05), rgba(6,182,212,0.05));
-    opacity: 0;
-    transition: opacity 0.3s;
+  .drop-zone:hover { background: var(--accent); }
+  .drop-zone:hover .drop-hint,
+  .drop-zone.dragover .drop-hint {
+    color: var(--ink);
   }
-  .drop-zone:hover { border-color: var(--accent); }
-  .drop-zone:hover::before { opacity: 1; }
   .drop-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(45,212,191,0.1);
-    transform: scale(1.005);
+    background: var(--accent);
+    border-style: solid;
   }
   .drop-icon {
     font-size: 42px;
@@ -101,15 +102,20 @@
   }
   .drop-text {
     font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
+    font-weight: 700;
+    color: var(--ink);
     margin-bottom: 6px;
     position: relative;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
   }
   .drop-hint {
-    font-size: 13px;
-    color: var(--muted);
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-2);
     position: relative;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   input[type="file"] { display: none; }
 
@@ -117,43 +123,47 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    background: rgba(251,191,36,0.08);
-    border: 1px solid rgba(251,191,36,0.2);
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
+    background: var(--accent);
+    border: var(--bw) solid var(--ink);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 16px;
+    border-radius: 0;
+    margin-bottom: 20px;
     font-size: 13px;
-    color: #fde68a;
+    color: var(--ink);
+    font-weight: 500;
   }
   .banner.error {
-    background: rgba(248,113,113,0.1);
-    border-color: rgba(248,113,113,0.3);
-    color: #fecaca;
+    background: var(--danger);
+    color: var(--ink);
   }
   .banner.info {
-    background: rgba(45,212,191,0.08);
-    border-color: rgba(45,212,191,0.2);
-    color: var(--text-2);
+    background: var(--accent);
+    color: var(--ink);
   }
   .banner code {
-    background: rgba(0,0,0,0.3);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-family: 'SF Mono', Consolas, monospace;
+    background: var(--ink);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 0;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
     font-size: 12px;
+    font-weight: 600;
   }
+  .banner strong { font-weight: 700; }
 
   .progress {
     margin-top: 16px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 12px;
+    background: var(--surface-2);
+    border: var(--bw-thin) solid var(--ink);
+    border-radius: 0;
     overflow: hidden;
     display: none;
   }
   .progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    background: var(--accent);
     width: 0;
     transition: width 0.3s;
   }
@@ -174,12 +184,13 @@
   }
   .archive-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 10px;
     min-width: 0;
     flex: 1;
+    color: var(--ink);
   }
   .archive-title .name {
     white-space: nowrap;
@@ -187,12 +198,15 @@
     text-overflow: ellipsis;
   }
   .archive-meta {
-    font-size: 12px;
-    color: var(--muted);
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-2);
     display: flex;
     gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
-  .archive-meta span::before { content: '·'; margin-right: 10px; color: var(--border); }
+  .archive-meta span::before { content: '·'; margin-right: 10px; color: var(--ink-3); }
   .archive-meta span:first-child::before { content: ''; margin: 0; }
 
   .toolbar {
@@ -205,26 +219,30 @@
   .toolbar .search {
     flex: 1;
     min-width: 200px;
-    padding: 9px 12px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-family: inherit;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: var(--bw-thin) solid var(--ink);
+    border-radius: 0;
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
     font-size: 13px;
     outline: none;
   }
-  .toolbar .search:focus { border-color: var(--accent); }
+  .toolbar .search:focus { background: var(--accent); }
   .toolbar .count {
-    font-size: 12px;
-    color: var(--muted);
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 11px;
+    color: var(--ink-2);
     padding: 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
   }
 
   .file-list {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: var(--bw-thin) solid var(--ink);
+    border-radius: 0;
     max-height: 460px;
     overflow-y: auto;
   }
@@ -232,110 +250,115 @@
     display: grid;
     grid-template-columns: 28px 24px 1fr auto auto;
     gap: 10px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     align-items: center;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--ink);
     font-size: 13px;
     transition: background 0.1s;
   }
   .file-row:last-child { border-bottom: 0; }
-  .file-row:hover { background: rgba(45,212,191,0.06); }
+  .file-row:hover { background: var(--accent); }
   .file-row .icon { font-size: 16px; text-align: center; }
   .file-row .name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--text);
+    color: var(--ink);
+    font-weight: 500;
   }
   .file-row .name .path {
-    color: var(--muted);
+    color: var(--ink-2);
     font-size: 11px;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
   }
   .file-row .size {
-    color: var(--muted);
-    font-size: 12px;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    color: var(--ink-2);
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    font-weight: 600;
   }
   .file-row .action-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-2);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
+    background: var(--surface);
+    border: var(--bw-thin) solid var(--ink);
+    color: var(--ink);
+    padding: 5px 10px;
+    border-radius: 0;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 10px;
+    font-weight: 700;
     cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
+    transition: all 0.12s;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
   .file-row .action-btn:hover {
-    border-color: var(--accent);
+    background: var(--ink);
     color: var(--accent);
-    background: rgba(45,212,191,0.08);
   }
   .file-row.hidden { display: none; }
 
   input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent);
+    width: 18px; height: 18px;
+    accent-color: var(--ink);
     cursor: pointer;
   }
 
   .actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     margin-top: 16px;
     flex-wrap: wrap;
   }
   .btn {
-    padding: 11px 18px;
-    border: none;
-    border-radius: var(--radius-sm);
+    padding: 14px 20px;
+    border: var(--bw) solid var(--ink);
+    border-radius: 0;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.1s ease;
     font-family: inherit;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    box-shadow: var(--shadow-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--ink);
   }
   .btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    color: #0a0f0d;
-    box-shadow: 0 4px 12px rgba(45,212,191,0.3);
+    background: var(--accent);
+    color: var(--ink);
     flex: 1;
     min-width: 180px;
   }
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(45,212,191,0.4);
-  }
   .btn-primary:disabled {
-    background: var(--border);
-    color: var(--muted);
+    background: var(--surface-2);
+    color: var(--ink-3);
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
+    box-shadow: var(--shadow-sm);
   }
   .btn-secondary {
-    background: var(--surface-2);
-    color: var(--text-2);
-    border: 1px solid var(--border);
-  }
-  .btn-secondary:hover {
-    background: var(--border);
-    color: var(--text);
+    background: var(--surface);
+    color: var(--ink);
   }
 
   /* Preview modal */
   .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
+    background: rgba(10,10,10,0.7);
     display: none;
     align-items: center;
     justify-content: center;
@@ -345,8 +368,9 @@
   .modal-backdrop.active { display: flex; }
   .modal {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: var(--bw) solid var(--ink);
+    border-radius: 0;
+    box-shadow: var(--shadow);
     max-width: 920px;
     width: 100%;
     max-height: 100%;
@@ -356,42 +380,48 @@
   }
   .modal-header {
     padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: var(--bw-thin) solid var(--ink);
+    background: var(--accent);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
   .modal-title {
-    font-size: 14px;
-    font-weight: 600;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--ink);
   }
   .modal-close {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-2);
-    width: 30px; height: 30px;
-    border-radius: 6px;
+    background: var(--surface);
+    border: var(--bw-thin) solid var(--ink);
+    color: var(--ink);
+    width: 32px; height: 32px;
+    border-radius: 0;
     cursor: pointer;
     font-family: inherit;
     font-size: 14px;
+    font-weight: 700;
     flex-shrink: 0;
+    transition: all 0.1s;
   }
-  .modal-close:hover { background: var(--surface-2); }
+  .modal-close:hover { background: var(--ink); color: var(--accent); }
   .modal-body {
     flex: 1;
     overflow: auto;
     padding: 20px;
     min-height: 200px;
+    background: var(--surface);
   }
   .modal-body pre {
-    font-family: 'SF Mono', Consolas, monospace;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
     font-size: 12px;
-    color: var(--text-2);
+    color: var(--ink);
     white-space: pre-wrap;
     word-break: break-word;
     line-height: 1.6;
@@ -401,27 +431,41 @@
     max-height: 70vh;
     display: block;
     margin: 0 auto;
-    border-radius: 6px;
+    border: var(--bw-thin) solid var(--ink);
   }
   .modal-body .unsupported {
     text-align: center;
-    color: var(--muted);
+    color: var(--ink-2);
     padding: 60px 20px;
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
   .modal-body .unsupported .emoji { font-size: 42px; margin-bottom: 12px; display: block; }
 
   .footer {
     text-align: center;
-    margin-top: 32px;
-    color: var(--muted);
-    font-size: 12px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: var(--bw-thin) solid var(--ink);
+    font-family: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    color: var(--ink-2);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
-  .footer a { color: var(--accent); text-decoration: none; }
-  .footer strong { color: var(--text-2); }
+  .footer a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .footer strong { color: var(--ink); }
 
   @media (max-width: 560px) {
     body { padding: 24px 12px; }
-    h1 { font-size: 20px; }
+    h1 { font-size: 22px; }
     .subtitle { margin-left: 0; margin-top: 8px; }
     .file-row {
       grid-template-columns: 24px 20px 1fr auto;
